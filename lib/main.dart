@@ -46,6 +46,7 @@ class MouseTrackerState extends State<MouseTracker> {
   bool _particlesGenerated = false;
   Timer? _timer;
   bool _gameOver = false;
+  final Stopwatch _stopwatch = Stopwatch();
 
   @override
   void didChangeDependencies() {
@@ -58,6 +59,9 @@ class MouseTrackerState extends State<MouseTracker> {
       _timer = Timer.periodic(Duration(milliseconds: 16), (timer) {
         _updateParticles();
       });
+
+      // Start the stopwatch
+      _stopwatch.start();
     }
   }
 
@@ -87,6 +91,13 @@ class MouseTrackerState extends State<MouseTracker> {
     super.dispose();
   }
 
+  String _formatElapsedTime() {
+    final elapsed = _stopwatch.elapsed;
+    final minutes = elapsed.inMinutes;
+    final seconds = elapsed.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   void _updateParticles() {
     final screenSize = MediaQuery.of(context).size;
     setState(() {
@@ -110,6 +121,7 @@ class MouseTrackerState extends State<MouseTracker> {
             particle.size + 10.0) {
           _gameOver = true;
           _timer?.cancel();
+          _stopwatch.stop();
         }
       }
     });
@@ -121,6 +133,7 @@ class MouseTrackerState extends State<MouseTracker> {
       _particles.clear();
       _particlesGenerated = false;
       _gameOver = false;
+      _stopwatch.reset();
       didChangeDependencies();
     });
   }
@@ -143,6 +156,18 @@ class MouseTrackerState extends State<MouseTracker> {
               child: CustomPaint(
                 painter: BallPainter(_mousePosition, _particles, _gameOver),
                 child: Container(),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Text(
+              "Timer : ${_formatElapsedTime()}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -177,6 +202,14 @@ class MouseTrackerState extends State<MouseTracker> {
                       ),
                       onPressed: _resetGame,
                       child: const Text('Try Again'),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Time: ${_formatElapsedTime()}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                      ),
                     ),
                   ],
                 ),
