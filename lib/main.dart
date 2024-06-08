@@ -100,6 +100,8 @@ class MouseTrackerState extends State<MouseTracker> {
 
   void _updateParticles() {
     final screenSize = MediaQuery.of(context).size;
+    final center = Offset(screenSize.width / 2, screenSize.height / 2);
+
     setState(() {
       for (var particle in _particles) {
         particle.position += particle.velocity;
@@ -116,9 +118,21 @@ class MouseTrackerState extends State<MouseTracker> {
               Offset(particle.velocity.dx, -particle.velocity.dy);
         }
 
-        // Check for collision with player
-        if ((particle.position - _mousePosition).distance <
-            particle.size + 10.0) {
+        // Check for collision with the triangle cursor
+        final angle =
+            atan2(_mousePosition.dy - center.dy, _mousePosition.dx - center.dx);
+        final cursorSize = 20.0;
+        final cursorPoints = [
+          Offset(center.dx + cursorSize * cos(angle),
+              center.dy + cursorSize * sin(angle)),
+          Offset(center.dx + cursorSize * cos(angle + 2 * pi / 3),
+              center.dy + cursorSize * sin(angle + 2 * pi / 3)),
+          Offset(center.dx + cursorSize * cos(angle - 2 * pi / 3),
+              center.dy + cursorSize * sin(angle - 2 * pi / 3)),
+        ];
+
+        if (cursorPoints.any(
+            (point) => (point - particle.position).distance < particle.size)) {
           _gameOver = true;
           _timer?.cancel();
           _stopwatch.stop();
@@ -187,6 +201,14 @@ class MouseTrackerState extends State<MouseTracker> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    Text(
+                      'You lasted for : ${_formatElapsedTime()}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
@@ -202,14 +224,6 @@ class MouseTrackerState extends State<MouseTracker> {
                       ),
                       onPressed: _resetGame,
                       child: const Text('Try Again'),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Time: ${_formatElapsedTime()}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                      ),
                     ),
                   ],
                 ),
@@ -230,19 +244,16 @@ class Particle {
 }
 
 class BallPainter extends CustomPainter {
-  final Offset position;
+  final Offset mousePosition;
   final List<Particle> particles;
   final bool gameOver;
 
-  BallPainter(this.position, this.particles, this.gameOver);
+  BallPainter(this.mousePosition, this.particles, this.gameOver);
 
   @override
   void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
     if (!gameOver) {
-      final ballPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-
       final particlePaint = Paint()
         ..color = Colors.red
         ..style = PaintingStyle.fill;
@@ -252,8 +263,27 @@ class BallPainter extends CustomPainter {
         canvas.drawCircle(particle.position, particle.size, particlePaint);
       }
 
-      // Draw tracking ball
-      canvas.drawCircle(position, 10.0, ballPaint);
+      // Draw cursor
+      final cursorPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+
+      // Calculate the angle between the center and the mouse position
+      final angle =
+          atan2(mousePosition.dy - center.dy, mousePosition.dx - center.dx);
+
+      // Draw a triangle as the cursor
+      const double cursorSize = 20.0;
+      final path = Path()
+        ..moveTo(center.dx + cursorSize * cos(angle),
+            center.dy + cursorSize * sin(angle))
+        ..lineTo(center.dx + cursorSize * cos(angle + 2 * pi / 3),
+            center.dy + cursorSize * sin(angle + 2 * pi / 3))
+        ..lineTo(center.dx + cursorSize * cos(angle - 2 * pi / 3),
+            center.dy + cursorSize * sin(angle - 2 * pi / 3))
+        ..close();
+
+      canvas.drawPath(path, cursorPaint);
     }
   }
 
