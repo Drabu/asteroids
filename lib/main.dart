@@ -149,13 +149,13 @@ class MouseTrackerState extends State<MouseTracker> {
               center.dy + cursorSize * sin(angle - 2 * pi / 3)),
         ];
 
-        for (var particle in _particles) {
-          if (polygonContainsPointArrow(cursorPoints, particle.position)) {
-            _gameOver = true;
-            _timer?.cancel();
-            _stopwatch.stop();
-            break;
-          }
+        // Check for collision with player triangle
+        if (polygonContainsPointArrow(
+            particle.vertices.map((v) => v + particle.position).toList(),
+            cursorPoints)) {
+          _gameOver = true;
+          _timer?.cancel();
+          _stopwatch.stop();
         }
 
         // Check for collision with bullets
@@ -177,7 +177,16 @@ class MouseTrackerState extends State<MouseTracker> {
     });
   }
 
-  bool polygonContainsPointArrow(List<Offset> polygon, Offset point) {
+  bool polygonContainsPointArrow(List<Offset> polygon, List<Offset> arrow) {
+    for (var point in arrow) {
+      if (polygonContainsPointArrowTwo(polygon, point)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool polygonContainsPointArrowTwo(List<Offset> polygon, Offset point) {
     int intersectCount = 0;
     for (int j = 0; j < polygon.length; j++) {
       int i = j == 0 ? polygon.length - 1 : j - 1;
