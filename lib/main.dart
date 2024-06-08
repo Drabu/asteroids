@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -17,13 +18,23 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MouseTracker(),
+      home: const MouseTracker(
+        numberOfParticles: 20,
+        averageSpeed: 2.0,
+      ),
     );
   }
 }
 
 class MouseTracker extends StatefulWidget {
-  const MouseTracker({super.key});
+  final int numberOfParticles;
+  final double averageSpeed;
+
+  const MouseTracker({
+    super.key,
+    required this.numberOfParticles,
+    required this.averageSpeed,
+  });
 
   @override
   MouseTrackerState createState() => MouseTrackerState();
@@ -33,6 +44,7 @@ class MouseTrackerState extends State<MouseTracker> {
   Offset _mousePosition = Offset(50, 50); // Set initial position to be visible
   final List<Particle> _particles = [];
   bool _particlesGenerated = false;
+  Timer? _timer;
 
   @override
   void didChangeDependencies() {
@@ -40,23 +52,59 @@ class MouseTrackerState extends State<MouseTracker> {
     if (!_particlesGenerated) {
       _generateParticles();
       _particlesGenerated = true;
+
+      // Start a timer to update particle positions
+      _timer = Timer.periodic(Duration(milliseconds: 16), (timer) {
+        _updateParticles();
+      });
     }
   }
 
   void _generateParticles() {
     final random = Random();
-    const int particleCount = 30;
     const double minSize = 5.0;
     const double maxSize = 30.0;
+    final screenSize = MediaQuery.of(context).size;
 
-    for (int i = 0; i < particleCount; i++) {
+    for (int i = 0; i < widget.numberOfParticles; i++) {
       double size = minSize + random.nextDouble() * (maxSize - minSize);
       Offset position = Offset(
-        random.nextDouble() * MediaQuery.of(context).size.width,
-        random.nextDouble() * MediaQuery.of(context).size.height,
+        random.nextDouble() * screenSize.width,
+        random.nextDouble() * screenSize.height,
       );
-      _particles.add(Particle(position, size));
+      Offset velocity = Offset(
+        (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
+        (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
+      );
+      _particles.add(Particle(position, size, velocity));
     }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _updateParticles() {
+    final screenSize = MediaQuery.of(context).size;
+    setState(() {
+      for (var particle in _particles) {
+        particle.position += particle.velocity;
+
+        // Check bounds and reverse velocity if out of bounds to keep particles on screen
+        if (particle.position.dx < 0 ||
+            particle.position.dx > screenSize.width) {
+          particle.velocity =
+              Offset(-particle.velocity.dx, particle.velocity.dy);
+        }
+        if (particle.position.dy < 0 ||
+            particle.position.dy > screenSize.height) {
+          particle.velocity =
+              Offset(particle.velocity.dx, -particle.velocity.dy);
+        }
+      }
+    });
   }
 
   void _updateMousePosition(PointerEvent details) {
@@ -83,10 +131,11 @@ class MouseTrackerState extends State<MouseTracker> {
 }
 
 class Particle {
-  final Offset position;
+  Offset position;
   final double size;
+  Offset velocity;
 
-  Particle(this.position, this.size);
+  Particle(this.position, this.size, this.velocity);
 }
 
 class BallPainter extends CustomPainter {
