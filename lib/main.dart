@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:asteriods/algo/CollisionDetection.dart';
 import 'package:flutter/material.dart';
+
+import 'GamePainter.dart';
+import 'models/Bullets.dart';
+import 'models/Particle.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,9 +23,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MouseTracker(
-        numberOfParticles: 20,
+      home: MouseTracker(
+        numberOfParticles: 30,
         averageSpeed: 2.0,
+        cDection: BasicCollisionDetection(),
       ),
     );
   }
@@ -29,11 +35,13 @@ class MyApp extends StatelessWidget {
 class MouseTracker extends StatefulWidget {
   final int numberOfParticles;
   final double averageSpeed;
+  final CollisionDetection cDection;
 
   const MouseTracker({
     super.key,
     required this.numberOfParticles,
     required this.averageSpeed,
+    required this.cDection,
   });
 
   @override
@@ -42,7 +50,7 @@ class MouseTracker extends StatefulWidget {
 
 class MouseTrackerState extends State<MouseTracker> {
   final List<Bullet> _bullets = [];
-  Offset _mousePosition = Offset(50, 50); // Set initial position to be visible
+  Offset _mousePosition = const Offset(50, 50); // Set position
   final List<Particle> _particles = [];
   bool _particlesGenerated = false;
   Timer? _timer;
@@ -55,7 +63,6 @@ class MouseTrackerState extends State<MouseTracker> {
     if (!_particlesGenerated) {
       _generateParticles();
       _particlesGenerated = true;
-
       // Start a timer to update particle and bullet positions
       _timer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
         _updateParticlesAndBullets();
@@ -81,7 +88,7 @@ class MouseTrackerState extends State<MouseTracker> {
         (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
       );
       int numVertices =
-          5 + random.nextInt(5); // Random number of vertices between 5 and 10
+          4 + random.nextInt(4); // Random number of vertices between 4 and 8
       List<Offset> vertices = generateRandomPolygon(numVertices, size);
       _particles.add(Particle(vertices, position, velocity));
     }
@@ -117,7 +124,6 @@ class MouseTrackerState extends State<MouseTracker> {
   void _updateParticlesAndBullets() {
     final screenSize = MediaQuery.of(context).size;
     final center = Offset(screenSize.width / 2, screenSize.height / 2);
-
     setState(() {
       // Update particles
       for (int i = 0; i < _particles.length; i++) {
@@ -150,7 +156,7 @@ class MouseTrackerState extends State<MouseTracker> {
         ];
 
         // Check for collision with player triangle
-        if (polygonContainsPointArrow(
+        if (widget.cDection.hasCollided(
             particle.vertices.map((v) => v + particle.position).toList(),
             cursorPoints)) {
           _gameOver = true;
@@ -161,7 +167,7 @@ class MouseTrackerState extends State<MouseTracker> {
         // Check for collision with bullets
         for (int j = 0; j < _bullets.length; j++) {
           var bullet = _bullets[j];
-          if (polygonContainsPoint(
+          if (widget.cDection.isCollisionDetected(
               particle.vertices, particle.position, bullet.position)) {
             _particles.removeAt(i);
             _bullets.removeAt(j);
@@ -175,59 +181,6 @@ class MouseTrackerState extends State<MouseTracker> {
         bullet.position += bullet.velocity;
       }
     });
-  }
-
-  bool polygonContainsPointArrow(List<Offset> polygon, List<Offset> arrow) {
-    for (var point in arrow) {
-      if (polygonContainsPointArrowTwo(polygon, point)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool polygonContainsPointArrowTwo(List<Offset> polygon, Offset point) {
-    int intersectCount = 0;
-    for (int j = 0; j < polygon.length; j++) {
-      int i = j == 0 ? polygon.length - 1 : j - 1;
-      if (rayIntersectsSegment(point, polygon[i], polygon[j])) {
-        intersectCount++;
-      }
-    }
-    return (intersectCount % 2) == 1;
-  }
-
-  bool polygonContainsPoint(
-      List<Offset> vertices, Offset polygonPosition, Offset point) {
-    int intersections = 0;
-    for (int i = 0; i < vertices.length; i++) {
-      final vertex1 = vertices[i] + polygonPosition;
-      final vertex2 = vertices[(i + 1) % vertices.length] + polygonPosition;
-      if (rayIntersectsSegment(point, vertex1, vertex2)) {
-        intersections++;
-      }
-    }
-    return (intersections % 2) == 1;
-  }
-
-  bool rayIntersectsSegment(Offset p, Offset v1, Offset v2) {
-    if (v1.dy > v2.dy) {
-      final temp = v1;
-      v1 = v2;
-      v2 = temp;
-    }
-    if (p.dy == v1.dy || p.dy == v2.dy) {
-      p = Offset(p.dx, p.dy + 0.1);
-    }
-    if (p.dy < v1.dy || p.dy > v2.dy || p.dx > max(v1.dx, v2.dx)) {
-      return false;
-    }
-    if (p.dx < min(v1.dx, v2.dx)) {
-      return true;
-    }
-    final m_edge = (v2.dx - v1.dx) / (v2.dy - v1.dy);
-    final m_point = (p.dx - v1.dx) / (p.dy - v1.dy);
-    return m_point >= m_edge;
   }
 
   void _resetGame() {
@@ -345,153 +298,9 @@ class MouseTrackerState extends State<MouseTracker> {
   }
 }
 
-class Particle {
-  List<Offset> vertices;
-  Offset position;
-  Offset velocity;
-
-  Particle(this.vertices, this.position, this.velocity);
-}
-
-class BallPainter extends CustomPainter {
-  final Offset mousePosition;
-  final List<Particle> particles;
-  final bool gameOver;
-
-  BallPainter(this.mousePosition, this.particles, this.gameOver);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    if (!gameOver) {
-      final particlePaint = Paint()
-        ..color = Colors.red
-        ..style = PaintingStyle.fill;
-
-      // Draw particles
-      for (final particle in particles) {
-        canvas.drawCircle(particle.position, 3.0, particlePaint);
-      }
-
-      // Draw cursor
-      final cursorPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-
-      // Calculate the angle between the center and the mouse position
-      final angle =
-          atan2(mousePosition.dy - center.dy, mousePosition.dx - center.dx);
-
-      // Draw a triangle as the cursor
-      const double cursorSize = 20.0;
-      final path = Path()
-        ..moveTo(center.dx + cursorSize * cos(angle),
-            center.dy + cursorSize * sin(angle))
-        ..lineTo(center.dx + cursorSize * cos(angle + 2 * pi / 3),
-            center.dy + cursorSize * sin(angle + 2 * pi / 3))
-        ..lineTo(center.dx + cursorSize * cos(angle - 2 * pi / 3),
-            center.dy + cursorSize * sin(angle - 2 * pi / 3))
-        ..close();
-
-      canvas.drawPath(path, cursorPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
-}
-
-class GamePainter extends CustomPainter {
-  final Offset mousePosition;
-  final List<Particle> particles;
-  final List<Bullet> bullets;
-  final bool gameOver;
-
-  GamePainter(this.mousePosition, this.particles, this.bullets, this.gameOver);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    if (!gameOver) {
-      final particlePaint = Paint()
-        ..color = Colors.red
-        ..style = PaintingStyle.fill;
-
-      final bulletPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-
-      // Draw particles
-      // Draw particles (polygons)
-      for (final particle in particles) {
-        final path = Path();
-        for (int i = 0; i < particle.vertices.length; i++) {
-          final vertex = particle.vertices[i];
-          final nextVertex =
-              particle.vertices[(i + 1) % particle.vertices.length];
-          if (i == 0) {
-            path.moveTo(particle.position.dx + vertex.dx,
-                particle.position.dy + vertex.dy);
-          } else {
-            path.lineTo(particle.position.dx + vertex.dx,
-                particle.position.dy + vertex.dy);
-          }
-        }
-        path.close();
-        canvas.drawPath(path, particlePaint);
-      }
-
-      // Draw bullets
-      for (final bullet in bullets) {
-        canvas.drawCircle(
-            bullet.position, 3.0, bulletPaint); // Bullet radius set to 5.0
-      }
-
-      // Draw the player's triangle
-      final angle =
-          atan2(mousePosition.dy - center.dy, mousePosition.dx - center.dx);
-      final cursorSize = 20.0;
-      final path = Path()
-        ..moveTo(
-          center.dx + cursorSize * cos(angle),
-          center.dy + cursorSize * sin(angle),
-        )
-        ..lineTo(
-          center.dx + cursorSize * cos(angle + 2 * pi / 3),
-          center.dy + cursorSize * sin(angle + 2 * pi / 3),
-        )
-        ..lineTo(
-          center.dx + cursorSize * cos(angle - 2 * pi / 3),
-          center.dy + cursorSize * sin(angle - 2 * pi / 3),
-        )
-        ..close();
-
-      final playerPaint = Paint()
-        ..color = Colors.blue
-        ..style = PaintingStyle.fill;
-
-      canvas.drawPath(path, playerPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
-}
-
-class Bullet {
-  Offset position;
-  final Offset velocity;
-
-  Bullet(this.position, this.velocity);
-}
-
 extension NormalizeOffset on Offset {
   Offset normalize() {
-    final length = this.distance;
+    final length = distance;
     return this / length;
   }
 }
