@@ -68,12 +68,10 @@ class MouseTrackerState extends State<MouseTracker> {
 
   void _generateParticles() {
     final random = Random();
-    const double minSize = 5.0;
-    const double maxSize = 30.0;
     final screenSize = MediaQuery.of(context).size;
 
     for (int i = 0; i < widget.numberOfParticles; i++) {
-      double size = minSize + random.nextDouble() * (maxSize - minSize);
+      double size = 20.0 + random.nextDouble() * 30.0;
       Offset position = Offset(
         random.nextDouble() * screenSize.width,
         random.nextDouble() * screenSize.height,
@@ -82,8 +80,25 @@ class MouseTrackerState extends State<MouseTracker> {
         (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
         (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
       );
-      _particles.add(Particle(position, size, velocity));
+      int numVertices =
+          5 + random.nextInt(5); // Random number of vertices between 5 and 10
+      List<Offset> vertices = generateRandomPolygon(numVertices, size);
+      _particles.add(Particle(vertices, position, velocity));
     }
+  }
+
+  List<Offset> generateRandomPolygon(int numVertices, double radius) {
+    final random = Random();
+    List<Offset> vertices = [];
+
+    for (int i = 0; i < numVertices; i++) {
+      double angle = 2 * pi * i / numVertices;
+      double distance =
+          radius + random.nextDouble() * radius / 2; // Randomize distance
+      vertices.add(Offset(distance * cos(angle), distance * sin(angle)));
+    }
+
+    return vertices;
   }
 
   @override
@@ -105,7 +120,8 @@ class MouseTrackerState extends State<MouseTracker> {
 
     setState(() {
       // Update particles
-      for (var particle in _particles) {
+      for (int i = 0; i < _particles.length; i++) {
+        var particle = _particles[i];
         particle.position += particle.velocity;
 
         // Check bounds and reverse velocity if out of bounds to keep particles on screen
@@ -119,46 +135,90 @@ class MouseTrackerState extends State<MouseTracker> {
           particle.velocity =
               Offset(particle.velocity.dx, -particle.velocity.dy);
         }
+
+        // Check for collision with the triangle cursor
+        final angle =
+            atan2(_mousePosition.dy - center.dy, _mousePosition.dx - center.dx);
+        final cursorSize = 20.0;
+        final cursorPoints = [
+          Offset(center.dx + cursorSize * cos(angle),
+              center.dy + cursorSize * sin(angle)),
+          Offset(center.dx + cursorSize * cos(angle + 2 * pi / 3),
+              center.dy + cursorSize * sin(angle + 2 * pi / 3)),
+          Offset(center.dx + cursorSize * cos(angle - 2 * pi / 3),
+              center.dy + cursorSize * sin(angle - 2 * pi / 3)),
+        ];
+
+        for (var particle in _particles) {
+          if (polygonContainsPointArrow(cursorPoints, particle.position)) {
+            _gameOver = true;
+            _timer?.cancel();
+            _stopwatch.stop();
+            break;
+          }
+        }
+
+        // Check for collision with bullets
+        for (int j = 0; j < _bullets.length; j++) {
+          var bullet = _bullets[j];
+          if (polygonContainsPoint(
+              particle.vertices, particle.position, bullet.position)) {
+            _particles.removeAt(i);
+            _bullets.removeAt(j);
+            break;
+          }
+        }
       }
 
       // Update bullets
       for (var bullet in _bullets) {
         bullet.position += bullet.velocity;
       }
-
-      // Check for collisions between bullets and particles
-      _bullets.removeWhere((bullet) {
-        bool removeBullet = false;
-        _particles.removeWhere((particle) {
-          if ((bullet.position - particle.position).distance < particle.size) {
-            removeBullet = true;
-            return true; // Remove particle
-          }
-          return false;
-        });
-        return removeBullet;
-      });
-
-      // Check for collision with the triangle cursor
-      final angle =
-          atan2(_mousePosition.dy - center.dy, _mousePosition.dx - center.dx);
-      final cursorSize = 20.0;
-      final cursorPoints = [
-        Offset(center.dx + cursorSize * cos(angle),
-            center.dy + cursorSize * sin(angle)),
-        Offset(center.dx + cursorSize * cos(angle + 2 * pi / 3),
-            center.dy + cursorSize * sin(angle + 2 * pi / 3)),
-        Offset(center.dx + cursorSize * cos(angle - 2 * pi / 3),
-            center.dy + cursorSize * sin(angle - 2 * pi / 3)),
-      ];
-
-      if (_particles.any((particle) => cursorPoints.any(
-          (point) => (point - particle.position).distance < particle.size))) {
-        _gameOver = true;
-        _timer?.cancel();
-        _stopwatch.stop();
-      }
     });
+  }
+
+  bool polygonContainsPointArrow(List<Offset> polygon, Offset point) {
+    int intersectCount = 0;
+    for (int j = 0; j < polygon.length; j++) {
+      int i = j == 0 ? polygon.length - 1 : j - 1;
+      if (rayIntersectsSegment(point, polygon[i], polygon[j])) {
+        intersectCount++;
+      }
+    }
+    return (intersectCount % 2) == 1;
+  }
+
+  bool polygonContainsPoint(
+      List<Offset> vertices, Offset polygonPosition, Offset point) {
+    int intersections = 0;
+    for (int i = 0; i < vertices.length; i++) {
+      final vertex1 = vertices[i] + polygonPosition;
+      final vertex2 = vertices[(i + 1) % vertices.length] + polygonPosition;
+      if (rayIntersectsSegment(point, vertex1, vertex2)) {
+        intersections++;
+      }
+    }
+    return (intersections % 2) == 1;
+  }
+
+  bool rayIntersectsSegment(Offset p, Offset v1, Offset v2) {
+    if (v1.dy > v2.dy) {
+      final temp = v1;
+      v1 = v2;
+      v2 = temp;
+    }
+    if (p.dy == v1.dy || p.dy == v2.dy) {
+      p = Offset(p.dx, p.dy + 0.1);
+    }
+    if (p.dy < v1.dy || p.dy > v2.dy || p.dx > max(v1.dx, v2.dx)) {
+      return false;
+    }
+    if (p.dx < min(v1.dx, v2.dx)) {
+      return true;
+    }
+    final m_edge = (v2.dx - v1.dx) / (v2.dy - v1.dy);
+    final m_point = (p.dx - v1.dx) / (p.dy - v1.dy);
+    return m_point >= m_edge;
   }
 
   void _resetGame() {
@@ -277,11 +337,11 @@ class MouseTrackerState extends State<MouseTracker> {
 }
 
 class Particle {
+  List<Offset> vertices;
   Offset position;
-  final double size;
   Offset velocity;
 
-  Particle(this.position, this.size, this.velocity);
+  Particle(this.vertices, this.position, this.velocity);
 }
 
 class BallPainter extends CustomPainter {
@@ -301,7 +361,7 @@ class BallPainter extends CustomPainter {
 
       // Draw particles
       for (final particle in particles) {
-        canvas.drawCircle(particle.position, particle.size, particlePaint);
+        canvas.drawCircle(particle.position, 3.0, particlePaint);
       }
 
       // Draw cursor
@@ -355,8 +415,23 @@ class GamePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
 
       // Draw particles
+      // Draw particles (polygons)
       for (final particle in particles) {
-        canvas.drawCircle(particle.position, particle.size, particlePaint);
+        final path = Path();
+        for (int i = 0; i < particle.vertices.length; i++) {
+          final vertex = particle.vertices[i];
+          final nextVertex =
+              particle.vertices[(i + 1) % particle.vertices.length];
+          if (i == 0) {
+            path.moveTo(particle.position.dx + vertex.dx,
+                particle.position.dy + vertex.dy);
+          } else {
+            path.lineTo(particle.position.dx + vertex.dx,
+                particle.position.dy + vertex.dy);
+          }
+        }
+        path.close();
+        canvas.drawPath(path, particlePaint);
       }
 
       // Draw bullets
