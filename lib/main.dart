@@ -45,6 +45,7 @@ class MouseTrackerState extends State<MouseTracker> {
   final List<Particle> _particles = [];
   bool _particlesGenerated = false;
   Timer? _timer;
+  bool _gameOver = false;
 
   @override
   void didChangeDependencies() {
@@ -103,7 +104,24 @@ class MouseTrackerState extends State<MouseTracker> {
           particle.velocity =
               Offset(particle.velocity.dx, -particle.velocity.dy);
         }
+
+        // Check for collision with player
+        if ((particle.position - _mousePosition).distance <
+            particle.size + 10.0) {
+          _gameOver = true;
+          _timer?.cancel();
+        }
       }
+    });
+  }
+
+  void _resetGame() {
+    setState(() {
+      _mousePosition = Offset(50, 50);
+      _particles.clear();
+      _particlesGenerated = false;
+      _gameOver = false;
+      didChangeDependencies();
     });
   }
 
@@ -116,15 +134,55 @@ class MouseTrackerState extends State<MouseTracker> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Colors.black, // Set background color to black
-        child: MouseRegion(
-          onHover: _updateMousePosition,
-          child: CustomPaint(
-            painter: BallPainter(_mousePosition, _particles),
-            child: Container(),
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.black, // Set background color to black
+            child: MouseRegion(
+              onHover: _updateMousePosition,
+              child: CustomPaint(
+                painter: BallPainter(_mousePosition, _particles, _gameOver),
+                child: Container(),
+              ),
+            ),
           ),
-        ),
+          if (_gameOver)
+            Container(
+              color: Colors.black, // Make the background completely black
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'GAME OVER',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 24,
+                        ),
+                        foregroundColor:
+                            Colors.white, // Set text color to white
+                      ),
+                      onPressed: _resetGame,
+                      child: const Text('Try Again'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -141,26 +199,29 @@ class Particle {
 class BallPainter extends CustomPainter {
   final Offset position;
   final List<Particle> particles;
+  final bool gameOver;
 
-  BallPainter(this.position, this.particles);
+  BallPainter(this.position, this.particles, this.gameOver);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final ballPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+    if (!gameOver) {
+      final ballPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
 
-    final particlePaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
+      final particlePaint = Paint()
+        ..color = Colors.red
+        ..style = PaintingStyle.fill;
 
-    // Draw particles
-    for (final particle in particles) {
-      canvas.drawCircle(particle.position, particle.size, particlePaint);
+      // Draw particles
+      for (final particle in particles) {
+        canvas.drawCircle(particle.position, particle.size, particlePaint);
+      }
+
+      // Draw tracking ball
+      canvas.drawCircle(position, 10.0, ballPaint);
     }
-
-    // Draw tracking ball
-    canvas.drawCircle(position, 10.0, ballPaint);
   }
 
   @override
