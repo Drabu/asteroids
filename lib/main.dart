@@ -74,23 +74,8 @@ class MouseTrackerState extends State<MouseTracker> {
   }
 
   void _generateParticles() {
-    final random = Random();
-    final screenSize = MediaQuery.of(context).size;
-
     for (int i = 0; i < widget.numberOfParticles; i++) {
-      double size = 20.0 + random.nextDouble() * 30.0;
-      Offset position = Offset(
-        random.nextDouble() * screenSize.width,
-        random.nextDouble() * screenSize.height,
-      );
-      Offset velocity = Offset(
-        (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
-        (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
-      );
-      int numVertices =
-          4 + random.nextInt(4); // Random number of vertices between 4 and 8
-      List<Offset> vertices = generateRandomPolygon(numVertices, size);
-      _particles.add(Particle(vertices, position, velocity));
+      _particles.add(genrateParticle());
     }
   }
 
@@ -171,6 +156,7 @@ class MouseTrackerState extends State<MouseTracker> {
               particle.vertices, particle.position, bullet.position)) {
             _particles.removeAt(i);
             _bullets.removeAt(j);
+            _particles.add(genrateParticle());
             break;
           }
         }
@@ -181,6 +167,31 @@ class MouseTrackerState extends State<MouseTracker> {
         bullet.position += bullet.velocity;
       }
     });
+  }
+
+  Particle genrateParticle() {
+    final random = Random();
+    final screenSize = MediaQuery.of(context).size;
+    double size = 20.0 + random.nextDouble() * 30.0;
+    final center = Offset(screenSize.width / 2, screenSize.height / 2);
+    const double safeZoneRadius = 100.0; // Define the radius of the safe zone
+
+    Offset position;
+    do {
+      position = Offset(
+        random.nextDouble() * screenSize.width,
+        random.nextDouble() * screenSize.height,
+      );
+    } while ((position - center).distance < safeZoneRadius);
+
+    Offset velocity = Offset(
+      (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
+      (random.nextDouble() - 0.5) * widget.averageSpeed * 2,
+    );
+    int numVertices =
+        4 + random.nextInt(4); // Random number of vertices between 4 and 8
+    List<Offset> vertices = generateRandomPolygon(numVertices, size);
+    return Particle(vertices, position, velocity);
   }
 
   void _resetGame() {
