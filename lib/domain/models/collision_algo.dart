@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 abstract class CollisionDetectionAlgorithm {
-  bool isCollisionDetected(
-      List<Offset> vertices, Offset polygonPosition, Offset point);
+  bool isCollisionDetected(final List<Offset> vertices,
+      final Offset polygonPosition, final Offset point);
 
-  bool hasCollided(List<Offset> polygon, List<Offset> arrow);
+  bool hasCollided(final List<Offset> polygon, final List<Offset> arrow);
 }

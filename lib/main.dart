@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     return MaterialApp(
       title: 'Asteriods',
       theme: ThemeData(
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MouseTracker(
         numberOfParticles: 30,
-        averageSpeed: 2.0,
+        averageSpeed: 2,
         cDection: RayCastingAlgorithm(),
       ),
     );
@@ -38,10 +38,10 @@ class MouseTracker extends StatefulWidget {
   final CollisionDetectionAlgorithm cDection;
 
   const MouseTracker({
-    super.key,
     required this.numberOfParticles,
     required this.averageSpeed,
     required this.cDection,
+    super.key,
   });
 
   @override
@@ -49,24 +49,24 @@ class MouseTracker extends StatefulWidget {
 }
 
 class MouseTrackerState extends State<MouseTracker> {
-  final List<Bullet> _bullets = [];
+  final List<Bullet> _bullets = <Bullet>[];
   Offset _mousePosition = const Offset(50, 50); // Set position
-  final List<Particle> _particles = [];
+  final List<Particle> _particles = <Particle>[];
   bool _particlesGenerated = false;
   Timer? _timer;
   bool _gameOver = false;
   final Stopwatch _stopwatch = Stopwatch();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: [
+        children: <Widget>[
           Container(
             color: Colors.black, // Set background color to black
             child: MouseRegion(
               onHover: _updateMousePosition,
-              onExit: (_) => _mousePosition =
+              onExit: (final _) => _mousePosition =
                   Offset.zero, // Reset position when mouse leaves the area
               child: GestureDetector(
                 onTap: _shootBullet, // Shoot a bullet on mouse click
@@ -85,7 +85,7 @@ class MouseTrackerState extends State<MouseTracker> {
             top: 16,
             left: 16,
             child: Text(
-              "Timer : ${_formatElapsedTime()}",
+              'Timer : ${_formatElapsedTime()}',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -99,7 +99,7 @@ class MouseTrackerState extends State<MouseTracker> {
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
+                  children: <Widget>[
                     const Text(
                       'GAME OVER',
                       style: TextStyle(
@@ -149,7 +149,8 @@ class MouseTrackerState extends State<MouseTracker> {
       _generateParticles();
       _particlesGenerated = true;
       // Start a timer to update particle and bullet positions
-      _timer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
+      _timer =
+          Timer.periodic(const Duration(milliseconds: 16), (final Timer timer) {
         _updateParticlesAndBullets();
       });
 
@@ -170,9 +171,10 @@ class MouseTrackerState extends State<MouseTracker> {
     }
   }
 
-  List<Offset> generateRandomPolygon(int numVertices, double radius) {
-    final random = Random();
-    List<Offset> vertices = [];
+  List<Offset> generateRandomPolygon(
+      final int numVertices, final double radius) {
+    final Random random = Random();
+    List<Offset> vertices = <Offset>[];
 
     for (int i = 0; i < numVertices; i++) {
       double angle = 2 * pi * i / numVertices;
@@ -185,16 +187,16 @@ class MouseTrackerState extends State<MouseTracker> {
   }
 
   String _formatElapsedTime() {
-    final elapsed = _stopwatch.elapsed;
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+    final Duration elapsed = _stopwatch.elapsed;
+    final int minutes = elapsed.inMinutes;
+    final int seconds = elapsed.inSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   String _getGameTime() {
-    final elapsed = _stopwatch.elapsed;
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+    final Duration elapsed = _stopwatch.elapsed;
+    final int minutes = elapsed.inMinutes;
+    final int seconds = elapsed.inSeconds % 60;
 
     if (minutes > 0) {
       return 'You lasted for $minutes minute${minutes > 1 ? 's' : ''} and $seconds second${seconds != 1 ? 's' : ''}';
@@ -204,12 +206,12 @@ class MouseTrackerState extends State<MouseTracker> {
   }
 
   void _updateParticlesAndBullets() {
-    final screenSize = MediaQuery.of(context).size;
-    final center = Offset(screenSize.width / 2, screenSize.height / 2);
+    final Size screenSize = MediaQuery.of(context).size;
+    final Offset center = Offset(screenSize.width / 2, screenSize.height / 2);
     setState(() {
       // Update particles
       for (int i = 0; i < _particles.length; i++) {
-        var particle = _particles[i];
+        Particle particle = _particles[i];
         particle.position += particle.velocity;
 
         // Check bounds and reverse velocity if out of bounds to keep particles on screen
@@ -225,10 +227,10 @@ class MouseTrackerState extends State<MouseTracker> {
         }
 
         // Check for collision with the triangle cursor
-        final angle =
+        final double angle =
             atan2(_mousePosition.dy - center.dy, _mousePosition.dx - center.dx);
-        const cursorSize = 20.0;
-        final cursorPoints = [
+        const double cursorSize = 20;
+        final List<Offset> cursorPoints = <Offset>[
           Offset(center.dx + cursorSize * cos(angle),
               center.dy + cursorSize * sin(angle)),
           Offset(center.dx + cursorSize * cos(angle + 2 * pi / 3),
@@ -239,7 +241,9 @@ class MouseTrackerState extends State<MouseTracker> {
 
         // Check for collision with player triangle
         if (widget.cDection.hasCollided(
-            particle.vertices.map((v) => v + particle.position).toList(),
+            particle.vertices
+                .map((final Offset v) => v + particle.position)
+                .toList(),
             cursorPoints)) {
           _gameOver = true;
           _timer?.cancel();
@@ -248,7 +252,7 @@ class MouseTrackerState extends State<MouseTracker> {
 
         // Check for collision with bullets
         for (int j = 0; j < _bullets.length; j++) {
-          var bullet = _bullets[j];
+          Bullet bullet = _bullets[j];
           if (widget.cDection.isCollisionDetected(
               particle.vertices, particle.position, bullet.position)) {
             _particles.removeAt(i);
@@ -260,18 +264,18 @@ class MouseTrackerState extends State<MouseTracker> {
       }
 
       // Update bullets
-      for (var bullet in _bullets) {
+      for (final Bullet bullet in _bullets) {
         bullet.position += bullet.velocity;
       }
     });
   }
 
   Particle _genrateParticle() {
-    final random = Random();
-    final screenSize = MediaQuery.of(context).size;
+    final Random random = Random();
+    final Size screenSize = MediaQuery.of(context).size;
     double size = 20.0 + random.nextDouble() * 30.0;
-    final center = Offset(screenSize.width / 2, screenSize.height / 2);
-    const double safeZoneRadius = 100.0; // Define the radius of the safe zone
+    final Offset center = Offset(screenSize.width / 2, screenSize.height / 2);
+    const double safeZoneRadius = 100; // Define the radius of the safe zone
 
     Offset position;
     do {
@@ -302,21 +306,21 @@ class MouseTrackerState extends State<MouseTracker> {
     });
   }
 
-  void _updateMousePosition(PointerEvent details) {
+  void _updateMousePosition(final PointerEvent details) {
     setState(() {
       _mousePosition = details.localPosition;
     });
   }
 
   void _shootBullet() {
-    final screenSize = MediaQuery.of(context).size;
-    final center = Offset(screenSize.width / 2, screenSize.height / 2);
+    final Size screenSize = MediaQuery.of(context).size;
+    final Offset center = Offset(screenSize.width / 2, screenSize.height / 2);
 
     // Calculate the direction of the bullet
-    final direction = (_mousePosition - center).normalize();
+    final Offset direction = (_mousePosition - center).normalize();
 
     // Create a new bullet
-    final bullet =
+    final Bullet bullet =
         Bullet(center, direction * 5.0); // Adjust the speed as necessary
     setState(() {
       _bullets.add(bullet);

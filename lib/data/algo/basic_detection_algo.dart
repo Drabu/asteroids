@@ -5,12 +5,13 @@ import '../../domain/models/collision_algo.dart';
 
 class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
   @override
-  bool isCollisionDetected(
-      List<Offset> vertices, Offset polygonPosition, Offset point) {
+  bool isCollisionDetected(final List<Offset> vertices,
+      final Offset polygonPosition, final Offset point) {
     int intersections = 0;
     for (int i = 0; i < vertices.length; i++) {
-      final vertex1 = vertices[i] + polygonPosition;
-      final vertex2 = vertices[(i + 1) % vertices.length] + polygonPosition;
+      final Offset vertex1 = vertices[i] + polygonPosition;
+      final Offset vertex2 =
+          vertices[(i + 1) % vertices.length] + polygonPosition;
       if (_rayIntersectsSegment(point, vertex1, vertex2)) {
         intersections++;
       }
@@ -19,8 +20,8 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
   }
 
   @override
-  bool hasCollided(List<Offset> polygon, List<Offset> arrow) {
-    for (var point in arrow) {
+  bool hasCollided(final List<Offset> polygon, final List<Offset> arrow) {
+    for (final Offset point in arrow) {
       if (_polygonContainsPoint(polygon, point)) {
         return true;
       }
@@ -30,7 +31,7 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
 
   bool _rayIntersectsSegment(Offset p, Offset v1, Offset v2) {
     if (v1.dy > v2.dy) {
-      final temp = v1;
+      final Offset temp = v1;
       v1 = v2;
       v2 = temp;
     }
@@ -43,12 +44,12 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
     if (p.dx < min(v1.dx, v2.dx)) {
       return true;
     }
-    final mEdge = (v2.dx - v1.dx) / (v2.dy - v1.dy);
-    final mPoint = (p.dx - v1.dx) / (p.dy - v1.dy);
+    final double mEdge = (v2.dx - v1.dx) / (v2.dy - v1.dy);
+    final double mPoint = (p.dx - v1.dx) / (p.dy - v1.dy);
     return mPoint >= mEdge;
   }
 
-  bool _polygonContainsPoint(List<Offset> polygon, Offset point) {
+  bool _polygonContainsPoint(final List<Offset> polygon, final Offset point) {
     int intersectCount = 0;
     for (int j = 0; j < polygon.length; j++) {
       int i = j == 0 ? polygon.length - 1 : j - 1;

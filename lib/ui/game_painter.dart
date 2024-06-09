@@ -16,23 +16,23 @@ class GamePainter extends CustomPainter {
       required this.gameOver});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
+  void paint(final Canvas canvas, final Size size) {
+    final Offset center = Offset(size.width / 2, size.height / 2);
     if (!gameOver) {
-      final particlePaint = Paint()
+      final Paint particlePaint = Paint()
         ..color = Colors.red
         ..style = PaintingStyle.fill;
 
-      final bulletPaint = Paint()
+      final Paint bulletPaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.fill;
 
       // Draw particles
       // Draw particles (polygons)
-      for (final particle in particles) {
-        final path = Path();
+      for (final Particle particle in particles) {
+        final Path path = Path();
         for (int i = 0; i < particle.vertices.length; i++) {
-          final vertex = particle.vertices[i];
+          final Offset vertex = particle.vertices[i];
           if (i == 0) {
             path.moveTo(particle.position.dx + vertex.dx,
                 particle.position.dy + vertex.dy);
@@ -46,18 +46,18 @@ class GamePainter extends CustomPainter {
       }
 
       // Draw bullets
-      for (final bullet in bullets) {
+      for (final Bullet bullet in bullets) {
         canvas.drawCircle(
-            bullet.position, 3.0, bulletPaint); // Bullet radius set to 5.0
+            bullet.position, 3, bulletPaint); // Bullet radius set to 5.0
       }
 
       // Calculate the angle to rotate the cursor
-      final dx = mousePosition.dx - center.dx;
-      final dy = mousePosition.dy - center.dy;
-      final angle = atan2(dy, dx);
+      final double dx = mousePosition.dx - center.dx;
+      final double dy = mousePosition.dy - center.dy;
+      final double angle = atan2(dy, dx);
 
       // Define the cursor points
-      final path = Path()
+      final Path path = Path()
         ..moveTo(center.dx + 20 * cos(angle), center.dy + 20 * sin(angle))
         ..lineTo(center.dx + 10 * cos(angle + pi * 2 / 3),
             center.dy + 10 * sin(angle + pi * 2 / 3))
@@ -67,7 +67,7 @@ class GamePainter extends CustomPainter {
         ..close();
 
       // Draw cursor (triangle with connected center line)
-      final cursorPaint = Paint()
+      final Paint cursorPaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
@@ -77,7 +77,7 @@ class GamePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant GamePainter oldDelegate) {
+  bool shouldRepaint(covariant final GamePainter oldDelegate) {
     return true;
   }
 }
