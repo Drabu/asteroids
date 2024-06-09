@@ -1,7 +1,6 @@
 import 'package:asteriods/domain/config.dart';
 import 'package:asteriods/ui/widgets/playground_widget.dart';
 import 'package:flutter/material.dart';
-import 'data/algo/ray_casting_algo.dart';
 
 void main() {
   runApp(const MyApp());
