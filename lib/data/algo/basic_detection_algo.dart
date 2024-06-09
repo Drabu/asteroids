@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import '../../domain/models/collision_algo.dart';
 
-class BasicCollisionDetectionImpl implements CollisionDetectionAlgorithm {
+class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
   @override
   bool isCollisionDetected(
       List<Offset> vertices, Offset polygonPosition, Offset point) {
