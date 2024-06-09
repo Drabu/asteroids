@@ -5,13 +5,15 @@ import '../../domain/models/collision_algo.dart';
 
 class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
   @override
-  bool isCollisionDetected(final List<Offset> vertices,
+  bool hasCollidedWithBullets(final List<Offset> vertices,
       final Offset polygonPosition, final Offset point) {
     int intersections = 0;
+
     for (int i = 0; i < vertices.length; i++) {
       final Offset vertex1 = vertices[i] + polygonPosition;
       final Offset vertex2 =
           vertices[(i + 1) % vertices.length] + polygonPosition;
+
       if (_rayIntersectsSegment(point, vertex1, vertex2)) {
         intersections++;
       }
@@ -21,9 +23,10 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
 
   bool _polygonContainsPoint(final List<Offset> vertices, final Offset point) {
     int intersectCount = 0;
-    for (int j = 0; j < vertices.length; j++) {
-      int i = j == 0 ? vertices.length - 1 : j - 1;
-      if (_rayIntersectsSegment(point, vertices[i], vertices[j])) {
+    for (int i = 0; i < vertices.length; i++) {
+      int k = i == 0 ? vertices.length - 1 : i - 1;
+
+      if (_rayIntersectsSegment(point, vertices[k], vertices[i])) {
         intersectCount++;
       }
     }
@@ -31,7 +34,8 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
   }
 
   @override
-  bool hasCollided(final List<Offset> polygon, final List<Offset> arrow) {
+  bool hasCollidedWithPlayer(
+      final List<Offset> polygon, final List<Offset> arrow) {
     for (final Offset point in arrow) {
       if (_polygonContainsPoint(polygon, point)) {
         return true;

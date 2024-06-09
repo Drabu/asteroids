@@ -197,7 +197,7 @@ class PlaygroundState extends State<Playground> {
         ];
 
         // Check for collision with player triangle
-        if (widget.cDection.hasCollided(
+        if (widget.cDection.hasCollidedWithPlayer(
             particle.vertices
                 .map((final Offset v) => v + particle.position)
                 .toList(),
@@ -210,7 +210,7 @@ class PlaygroundState extends State<Playground> {
         // Check for collision with bullets
         for (int j = 0; j < _bullets.length; j++) {
           Bullet bullet = _bullets[j];
-          if (widget.cDection.isCollisionDetected(
+          if (widget.cDection.hasCollidedWithBullets(
               particle.vertices, particle.position, bullet.position)) {
             _particles.removeAt(i);
             _bullets.removeAt(j);
