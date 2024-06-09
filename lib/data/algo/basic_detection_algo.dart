@@ -1,14 +1,9 @@
 import 'dart:math';
 import 'dart:ui';
 
-abstract class CollisionDetection {
-  bool isCollisionDetected(
-      List<Offset> vertices, Offset polygonPosition, Offset point);
+import '../../domain/models/collision_algo.dart';
 
-  bool hasCollided(List<Offset> polygon, List<Offset> arrow);
-}
-
-class BasicCollisionDetection implements CollisionDetection {
+class BasicCollisionDetectionImpl implements CollisionDetection {
   @override
   bool hasCollided(List<Offset> polygon, List<Offset> arrow) {
     for (var point in arrow) {

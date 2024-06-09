@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
-
-import 'package:asteriods/algo/CollisionDetection.dart';
+import 'package:asteriods/domain/extensions/offset_extensions.dart';
 import 'package:flutter/material.dart';
-
-import 'GamePainter.dart';
-import 'models/Bullets.dart';
-import 'models/Particle.dart';
+import 'data/algo/basic_detection_algo.dart';
+import 'domain/models/bullets.dart';
+import 'domain/models/collision_algo.dart';
+import 'domain/models/particle.dart';
+import 'ui/game_painter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       home: MouseTracker(
         numberOfParticles: 30,
         averageSpeed: 2.0,
-        cDection: BasicCollisionDetection(),
+        cDection: BasicCollisionDetectionImpl(),
       ),
     );
   }
@@ -230,7 +230,10 @@ class MouseTrackerState extends State<MouseTracker> {
                 onTap: _shootBullet, // Shoot a bullet on mouse click
                 child: CustomPaint(
                   painter: GamePainter(
-                      _mousePosition, _particles, _bullets, _gameOver),
+                      mousePosition: _mousePosition,
+                      particles: _particles,
+                      bullets: _bullets,
+                      gameOver: _gameOver),
                   child: Container(),
                 ),
               ),
@@ -295,12 +298,5 @@ class MouseTrackerState extends State<MouseTracker> {
         ],
       ),
     );
-  }
-}
-
-extension NormalizeOffset on Offset {
-  Offset normalize() {
-    final length = distance;
-    return this / length;
   }
 }
