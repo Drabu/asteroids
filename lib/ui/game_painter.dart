@@ -33,8 +33,6 @@ class GamePainter extends CustomPainter {
         final path = Path();
         for (int i = 0; i < particle.vertices.length; i++) {
           final vertex = particle.vertices[i];
-          final nextVertex =
-              particle.vertices[(i + 1) % particle.vertices.length];
           if (i == 0) {
             path.moveTo(particle.position.dx + vertex.dx,
                 particle.position.dy + vertex.dy);
@@ -79,7 +77,7 @@ class GamePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant GamePainter old) {
+  bool shouldRepaint(covariant GamePainter oldDelegate) {
     return true;
   }
 }

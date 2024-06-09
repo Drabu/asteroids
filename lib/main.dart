@@ -145,7 +145,7 @@ class MouseTrackerState extends State<MouseTracker> {
         // Check for collision with the triangle cursor
         final angle =
             atan2(_mousePosition.dy - center.dy, _mousePosition.dx - center.dx);
-        final cursorSize = 20.0;
+        const cursorSize = 20.0;
         final cursorPoints = [
           Offset(center.dx + cursorSize * cos(angle),
               center.dy + cursorSize * sin(angle)),
@@ -185,7 +185,7 @@ class MouseTrackerState extends State<MouseTracker> {
 
   void _resetGame() {
     setState(() {
-      _mousePosition = Offset(50, 50);
+      _mousePosition = const Offset(50, 50);
       _particles.clear();
       _particlesGenerated = false;
       _gameOver = false;
