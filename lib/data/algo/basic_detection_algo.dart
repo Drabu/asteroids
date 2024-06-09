@@ -3,17 +3,7 @@ import 'dart:ui';
 
 import '../../domain/models/collision_algo.dart';
 
-class BasicCollisionDetectionImpl implements CollisionDetection {
-  @override
-  bool hasCollided(List<Offset> polygon, List<Offset> arrow) {
-    for (var point in arrow) {
-      if (polygonContainsPoint(polygon, point)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
+class BasicCollisionDetectionImpl implements CollisionDetectionAlgorithm {
   @override
   bool isCollisionDetected(
       List<Offset> vertices, Offset polygonPosition, Offset point) {
@@ -26,6 +16,16 @@ class BasicCollisionDetectionImpl implements CollisionDetection {
       }
     }
     return (intersections % 2) == 1;
+  }
+
+  @override
+  bool hasCollided(List<Offset> polygon, List<Offset> arrow) {
+    for (var point in arrow) {
+      if (_polygonContainsPoint(polygon, point)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool _rayIntersectsSegment(Offset p, Offset v1, Offset v2) {
@@ -48,7 +48,7 @@ class BasicCollisionDetectionImpl implements CollisionDetection {
     return mPoint >= mEdge;
   }
 
-  bool polygonContainsPoint(List<Offset> polygon, Offset point) {
+  bool _polygonContainsPoint(List<Offset> polygon, Offset point) {
     int intersectCount = 0;
     for (int j = 0; j < polygon.length; j++) {
       int i = j == 0 ? polygon.length - 1 : j - 1;
