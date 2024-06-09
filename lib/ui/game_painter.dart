@@ -1,8 +1,12 @@
 import 'dart:math';
+import 'package:asteriods/domain/config.dart';
 import 'package:flutter/material.dart';
 import '../domain/models/bullets.dart';
 import '../domain/models/particle.dart';
 
+/// A custom painter responsible for rendering game elements onto the canvas.
+/// It utilizes mouse position, particles, bullets, and game over status to dynamically paint the scene.
+/// The `shouldRepaint` method ensures constant updates by always returning true, as the game elements are continuously changing.
 class GamePainter extends CustomPainter {
   final Offset mousePosition;
   final List<Particle> particles;
@@ -20,11 +24,11 @@ class GamePainter extends CustomPainter {
     final Offset center = Offset(size.width / 2, size.height / 2);
     if (!gameOver) {
       final Paint particlePaint = Paint()
-        ..color = Colors.red
+        ..color = PlaygroundConfiguration.particleColor
         ..style = PaintingStyle.fill;
 
       final Paint bulletPaint = Paint()
-        ..color = Colors.white
+        ..color = PlaygroundConfiguration.bulletColor
         ..style = PaintingStyle.fill;
 
       // Draw particles
@@ -47,8 +51,8 @@ class GamePainter extends CustomPainter {
 
       // Draw bullets
       for (final Bullet bullet in bullets) {
-        canvas.drawCircle(
-            bullet.position, 3, bulletPaint); // Bullet radius set to 5.0
+        canvas.drawCircle(bullet.position, PlaygroundConfiguration.bulletRadius,
+            bulletPaint); // Bullet radius set to 3.0
       }
 
       // Calculate the angle to rotate the cursor
@@ -76,6 +80,10 @@ class GamePainter extends CustomPainter {
     }
   }
 
+  //*Ideally we should compare the state of particles and only repaint when
+  // the particles have changed but since our partcles are always moving hence
+  // adding equality check would add unnecesary overhead.
+  //*/
   @override
   bool shouldRepaint(covariant final GamePainter oldDelegate) {
     return true;

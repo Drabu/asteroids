@@ -19,6 +19,17 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
     return (intersections % 2) == 1;
   }
 
+  bool _polygonContainsPoint(final List<Offset> vertices, final Offset point) {
+    int intersectCount = 0;
+    for (int j = 0; j < vertices.length; j++) {
+      int i = j == 0 ? vertices.length - 1 : j - 1;
+      if (_rayIntersectsSegment(point, vertices[i], vertices[j])) {
+        intersectCount++;
+      }
+    }
+    return (intersectCount % 2) == 1;
+  }
+
   @override
   bool hasCollided(final List<Offset> polygon, final List<Offset> arrow) {
     for (final Offset point in arrow) {
@@ -47,16 +58,5 @@ class RayCastingAlgorithm implements CollisionDetectionAlgorithm {
     final double mEdge = (v2.dx - v1.dx) / (v2.dy - v1.dy);
     final double mPoint = (p.dx - v1.dx) / (p.dy - v1.dy);
     return mPoint >= mEdge;
-  }
-
-  bool _polygonContainsPoint(final List<Offset> polygon, final Offset point) {
-    int intersectCount = 0;
-    for (int j = 0; j < polygon.length; j++) {
-      int i = j == 0 ? polygon.length - 1 : j - 1;
-      if (_rayIntersectsSegment(point, polygon[i], polygon[j])) {
-        intersectCount++;
-      }
-    }
-    return (intersectCount % 2) == 1;
   }
 }
